@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["/*"],
+		"output": "root-one-level.php"
+	}
+}

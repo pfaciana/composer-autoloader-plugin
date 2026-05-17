@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["inc/*.php"],
+		"output": "shallow.php"
+	}
+}

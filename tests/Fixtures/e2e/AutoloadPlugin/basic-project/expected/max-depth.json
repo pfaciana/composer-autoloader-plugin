@@ -1,0 +1,11 @@
+{
+	"config": {
+		"attribute": "AutoRun",
+		"cwd": "src",
+		"patterns": [
+			"*"
+		],
+		"maxDepth": 0,
+		"output": "max-depth.php"
+	}
+}

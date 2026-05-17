@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["/*.PHP"],
+		"output": "case-sensitive.php"
+	}
+}

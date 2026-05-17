@@ -1,0 +1,7 @@
+{
+	"config": {
+		"patterns": ["lib"],
+		"import": "include_once",
+		"output": "import-include.php"
+	}
+}

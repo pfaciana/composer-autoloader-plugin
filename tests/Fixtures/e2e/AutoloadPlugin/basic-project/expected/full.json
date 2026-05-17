@@ -1,0 +1,9 @@
+{
+	"config": {
+		"attribute": "#[AutoRun(priority: -10, import: 'require', check: true)]",
+		"patterns": [
+			"src"
+		],
+		"output": "full.php"
+	}
+}

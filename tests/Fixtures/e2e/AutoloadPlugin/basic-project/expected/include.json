@@ -1,0 +1,9 @@
+{
+	"config": {
+		"attribute": "AutoRun(import: include)",
+		"patterns": [
+			"src"
+		],
+		"output": "include.php"
+	}
+}

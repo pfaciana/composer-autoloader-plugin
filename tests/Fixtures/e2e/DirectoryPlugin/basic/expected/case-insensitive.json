@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["/*.[pP][hH][pP]"],
+		"output": "case-insensitive.php"
+	}
+}

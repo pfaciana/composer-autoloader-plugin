@@ -1,0 +1,7 @@
+{
+	"config": {
+		"patterns": ["**/*.php"],
+		"maxDepth": 0,
+		"output": "max-depth.php"
+	}
+}

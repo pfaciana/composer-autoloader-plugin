@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["**/Deep/**/Nested/*"],
+		"output": "nested-any.php"
+	}
+}

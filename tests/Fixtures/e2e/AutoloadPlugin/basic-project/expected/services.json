@@ -1,0 +1,9 @@
+{
+	"config": {
+		"attribute": "AutoRun",
+		"patterns": [
+			"src/Services"
+		],
+		"output": "services.php"
+	}
+}

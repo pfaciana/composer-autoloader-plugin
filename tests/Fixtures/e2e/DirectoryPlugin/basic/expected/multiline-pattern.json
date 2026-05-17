@@ -1,0 +1,7 @@
+{
+	"config": {
+		"patterns": "src/Deep\ninc\nlib",
+		"import": "include",
+		"output": "multiline-pattern.php"
+	}
+}

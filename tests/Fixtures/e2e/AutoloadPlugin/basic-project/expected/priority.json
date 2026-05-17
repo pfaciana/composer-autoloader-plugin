@@ -1,0 +1,9 @@
+{
+	"config": {
+		"attribute": "AutoRun(priority: 99999999999999999)",
+		"patterns": [
+			"src"
+		],
+		"output": "priority.php"
+	}
+}

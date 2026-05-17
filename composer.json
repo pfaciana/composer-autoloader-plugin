@@ -1,0 +1,47 @@
+{
+	"name": "pfaciana/composer-autoloader-plugin",
+	"version": "0.1.0",
+	"description": "Composer plugin that scans for #[Autoload] attributes and generates bootstrap code",
+	"keywords": [],
+	"license": "GPL-2.0-only",
+	"type": "composer-plugin",
+	"homepage": "https://renderdev.com/",
+	"authors": [
+		{
+			"name": "Phil Faciana",
+			"email": "phil@renderdev.com",
+			"homepage": "https://renderdev.com/",
+			"role": "Developer"
+		}
+	],
+	"scripts": {
+		"test": "pest",
+		"test:parallel": "pest --parallel",
+		"test:watch": "pest --watch",
+		"test:coverage": "@php -d xdebug.mode=coverage vendor/bin/pest --coverage",
+		"cda": "composer dumpautoload",
+		"cdao": "composer dumpautoload --optimize"
+	},
+	"extra": {
+		"class": "Render\\Autoloader\\Plugin"
+	},
+	"autoload": {
+		"psr-4": {
+			"Render\\Autoloader\\": "src/"
+		}
+	},
+	"config": {
+		"allow-plugins": {
+			"pestphp/pest-plugin": true
+		}
+	},
+	"require-dev": {
+		"composer/composer": "^2.0",
+		"pestphp/pest": "4.6.3"
+	},
+	"require": {
+		"php": "^8.2",
+		"composer-plugin-api": "^2.0",
+		"pfaciana/includefile": "^0.1.1"
+	}
+}

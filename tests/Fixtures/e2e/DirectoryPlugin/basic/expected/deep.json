@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["src/Deep/**"],
+		"output": "deep.php"
+	}
+}

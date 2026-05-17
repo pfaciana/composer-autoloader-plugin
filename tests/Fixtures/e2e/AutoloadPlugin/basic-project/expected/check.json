@@ -1,0 +1,9 @@
+{
+	"config": {
+		"attribute": "#[AutoRun(check: true)]",
+		"patterns": [
+			"src"
+		],
+		"output": "check.php"
+	}
+}

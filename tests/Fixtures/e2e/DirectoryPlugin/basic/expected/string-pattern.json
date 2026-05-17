@@ -1,0 +1,7 @@
+{
+	"config": {
+		"patterns": "lib",
+		"import": "require",
+		"output": "string-pattern.php"
+	}
+}

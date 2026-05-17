@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["src"],
+		"output": "basic.php"
+	}
+}

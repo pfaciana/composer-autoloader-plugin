@@ -1,0 +1,1 @@
+<?php // tests/PluginTest.php

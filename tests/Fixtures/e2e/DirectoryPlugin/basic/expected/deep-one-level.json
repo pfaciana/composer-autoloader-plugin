@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["src/Deep/Nested/Nested/*"],
+		"output": "deep-one-level.php"
+	}
+}

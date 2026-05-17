@@ -1,0 +1,1 @@
+<?php // UPPERCASE.PHP

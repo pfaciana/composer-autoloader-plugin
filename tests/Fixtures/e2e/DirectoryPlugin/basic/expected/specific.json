@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["@file:config.php"],
+		"output": "specific.php"
+	}
+}

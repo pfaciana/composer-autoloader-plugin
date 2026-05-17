@@ -1,0 +1,6 @@
+{
+	"config": {
+		"patterns": ["**/*.php", "!vendor", "!node_modules", "!.git", "!cache", "!build", "!tests"],
+		"output": "exclude-config.php"
+	}
+}

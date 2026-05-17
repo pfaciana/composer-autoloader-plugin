@@ -1,0 +1,7 @@
+{
+	"config": {
+		"patterns": ["**/*.php", "!vendor", "!node_modules", "!.git", "!cache", "!build"],
+		"maxDepth": 2,
+		"output": "max-depth.php"
+	}
+}

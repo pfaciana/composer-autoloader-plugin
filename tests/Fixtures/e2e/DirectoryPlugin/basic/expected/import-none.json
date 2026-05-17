@@ -1,0 +1,7 @@
+{
+	"config": {
+		"patterns": "lib",
+		"import": "none",
+		"output": "import-none.php"
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"config": {
+		"attribute": "AutoRun",
+		"cwd": "src",
+		"patterns": [
+			"Services"
+		],
+		"output": "cwd.php"
+	}
+}

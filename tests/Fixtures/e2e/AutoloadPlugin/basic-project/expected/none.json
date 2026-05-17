@@ -1,0 +1,9 @@
+{
+	"config": {
+		"attribute": "AutoRun(import: none)",
+		"patterns": [
+			"src"
+		],
+		"output": "none.php"
+	}
+}
