@@ -4,12 +4,12 @@ declare( strict_types=1 );
 
 namespace Render\Autoloader\Attributes;
 
-use Render\Autoloader\Import;
 use Render\Autoloader\CallBuilder;
 use Render\Autoloader\CodeAnalyzer;
 use Render\Autoloader\BootstrapRenderer;
-use Render\Autoloader\Filesystem;
 use Render\Autoloader\Entry;
+use Render\Autoloader\Filesystem;
+use Render\Autoloader\Import;
 
 use Render\IncludeFile;
 
@@ -41,17 +41,64 @@ class AutoRunPlugin
 
 		$this->io->write( '<info>Render Autoloader:</info> Scanning for #[AutoRun] attributes...' );
 
-		$config  = $this->getConfig( $extra );
-		$entries = $this->getEntries( $config['cwd'], $config );
+		$result = self::build( $extra, $this->vendorDir );
+
+		if ( empty( $result['path'] ) ) {
+			$this->io->write( '<info>Render Autoloader:</info> No #[AutoRun] attributes found.' );
+
+			return NULL;
+		}
+
+		$this->io->write( sprintf(
+			'<info>Render Autoloader:</info> Generated %s with %d call(s).',
+			$result['path'],
+			$result['count'],
+		) );
+
+		return $result['path'];
+	}
+
+	public static function directRun ( string $composerJson ): ?string
+	{
+		if ( !is_file( $composerJson ) ) {
+			throw new \InvalidArgumentException( "composer.json not found: {$composerJson}" );
+		}
+
+		try {
+			$json = json_decode( file_get_contents( $composerJson ) ?: '', TRUE, flags: JSON_THROW_ON_ERROR );
+		}
+		catch ( \JsonException $e ) {
+			throw new \InvalidArgumentException( "Invalid composer.json: {$composerJson}", previous: $e );
+		}
+
+		if ( !is_array( $json ) ) {
+			throw new \InvalidArgumentException( "Invalid composer.json: {$composerJson}" );
+		}
+
+		$root      = dirname( $composerJson );
+		$vendorDir = $json['config']['vendor-dir'] ?? 'vendor';
+		$vendorDir = IncludeFile::is_absolute_path( $vendorDir )
+			? $vendorDir
+			: IncludeFile::add_trailing_slash( $root ) . IncludeFile::strip_preceding_slash( $vendorDir );
+
+		return self::build( $json['extra'] ?? [], IncludeFile::normalize( $vendorDir ) )['path'];
+	}
+
+	public static function build ( array $extra, string $vendorDir ): array
+	{
+		if ( !isset( $extra['autoload-by-attr'] ) ) {
+			return [ 'path' => NULL, 'count' => 0 ];
+		}
+
+		$config  = self::getConfig( $extra, $vendorDir );
+		$entries = self::getEntries( $config['cwd'], $config );
 
 		if ( empty( $entries ) ) {
 			if ( file_exists( $config['output'] ) ) {
 				@unlink( $config['output'] );
 			}
 
-			$this->io->write( '<info>Render Autoloader:</info> No #[AutoRun] attributes found.' );
-
-			return NULL;
+			return [ 'path' => NULL, 'count' => 0 ];
 		}
 
 		$defaults = array_filter( [
@@ -65,13 +112,7 @@ class AutoRunPlugin
 
 		Filesystem::writeFile( $config['output'], $content );
 
-		$this->io->write( sprintf(
-			'<info>Render Autoloader:</info> Generated %s with %d call(s).',
-			$config['output'],
-			count( $entries ),
-		) );
-
-		return $config['output'];
+		return [ 'path' => $config['output'], 'count' => count( $entries ) ];
 	}
 
 	/**
@@ -81,23 +122,31 @@ class AutoRunPlugin
 	 *
 	 * @return array{
 	 *     attribute: Attribute,
-	 *     patterns: string[],
+	 *     patterns: string|string[],
 	 *     output: string,
 	 *     cwd: string,
 	 *     phpOnly: bool,
 	 *     maxDepth: int,
 	 * } Attribute config
 	 */
-	private function getConfig ( array $extra ): array
+	public static function getConfig ( array $extra, string $vendorDir ): array
 	{
+		if ( !isset( $extra['autoload-by-attr'] ) ) {
+			$extra['autoload-by-attr'] = [];
+		}
+
+		if ( !is_array( $extra['autoload-by-attr'] ) ) {
+			$extra['autoload-by-attr'] = [ 'patterns' => $extra['autoload-by-attr'] ];
+		}
+
 		$config = array_merge( [
 			'attribute' => "AutoRun",
-			'patterns'  => [ 'src' ],
+			'patterns'  => [ '*' ],
 			'output'    => 'autoload_bootstrap.php',
-			'cwd'       => dirname( $this->vendorDir ),
+			'cwd'       => dirname( $vendorDir ),
 			'phpOnly'   => TRUE,
 			'maxDepth'  => 25,
-		], $extra['autoload-by-attr'] ?? [] );
+		], $extra['autoload-by-attr'] );
 
 		if ( is_string( $config['patterns'] ) ) {
 			$config['patterns'] = explode( "\n", $config['patterns'] );
@@ -106,12 +155,12 @@ class AutoRunPlugin
 		$config['attribute'] = new Attribute( $config['attribute'] );
 
 		if ( !IncludeFile::is_absolute_path( $config['output'] ) ) {
-			$config['output'] = $this->vendorDir . '/composer/' . $config['output'];
+			$config['output'] = $vendorDir . '/composer/' . $config['output'];
 		}
 		$config['output'] = IncludeFile::normalize( $config['output'] );
 
 		if ( !IncludeFile::is_absolute_path( $config['cwd'] ) ) {
-			$config['cwd'] = IncludeFile::add_trailing_slash( dirname( $this->vendorDir ) ) . IncludeFile::strip_preceding_slash( $config['cwd'] );
+			$config['cwd'] = IncludeFile::add_trailing_slash( dirname( $vendorDir ) ) . IncludeFile::strip_preceding_slash( $config['cwd'] );
 		}
 		$config['cwd'] = IncludeFile::normalize( $config['cwd'] );
 
@@ -124,7 +173,7 @@ class AutoRunPlugin
 	 * @param string $baseDir Base directory to scan
 	 * @param array{
 	 *     attribute: Attribute,
-	 *     patterns: string[],
+	 *     patterns: string|string[],
 	 *     output: string,
 	 *     cwd: string,
 	 *     phpOnly: bool,
@@ -133,7 +182,7 @@ class AutoRunPlugin
 	 *
 	 * @return Entry[] All discovered entries
 	 */
-	private function getEntries ( string $baseDir, array $config ): array
+	public static function getEntries ( string $baseDir, array $config ): array
 	{
 		$entries = [];
 
@@ -144,18 +193,18 @@ class AutoRunPlugin
 		$baseDir = IncludeFile::strip_trailing_slash( IncludeFile::normalize( $baseDir ) );
 
 		$phpFiles = IncludeFile::get_files( $baseDir, [
-			'filter'   => $this->getCallbackFilter( $baseDir, $config['phpOnly'], $includeFiles ),
+			'filter'   => self::getCallbackFilter( $baseDir, $config['phpOnly'], $includeFiles ),
 			'maxDepth' => $config['maxDepth'],
 		] );
 
 		foreach ( $phpFiles as $phpFile => $fileInfo ) {
-			$entries = array_merge( $entries, $this->scanFile( $phpFile, $attributeName ) );
+			$entries = array_merge( $entries, self::scanFile( $phpFile, $attributeName ) );
 		}
 
 		return $entries;
 	}
 
-	public function getCallbackFilter ( string $baseDir, bool $phpOnly, IncludeFile $includeFiles ): callable|false
+	public static function getCallbackFilter ( string $baseDir, bool $phpOnly, IncludeFile $includeFiles ): callable|false
 	{
 		if ( !$phpOnly ) {
 			return $includeFiles->getDefaultCallbackFilter( $baseDir );
@@ -190,7 +239,7 @@ class AutoRunPlugin
 	 *
 	 * @return Entry[] Discovered entries from file
 	 */
-	private function scanFile ( string $filePath, string $attributeName ): array
+	public static function scanFile ( string $filePath, string $attributeName ): array
 	{
 		if ( ( $code = @file_get_contents( $filePath ) ) === FALSE ) {
 			return [];
@@ -217,8 +266,6 @@ class AutoRunPlugin
 
 			return ReflectionScanner::scan( $relevantCandidates, $attributeName );
 		}
-
-		$this->io->write( "<comment>Render Autoloader:</comment> Using token fallback for {$filePath}" );
 
 		return $relevantCandidates;
 	}

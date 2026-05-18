@@ -45,7 +45,7 @@ class TokenScanner
 		$classDepth   = 0;
 
 		$pendingAttributes = [];
-		$pendingStatic    = FALSE;
+		$pendingStatic     = FALSE;
 
 		for ( $i = 0; $i < $count; $i++ ) {
 			$token = $tokens[$i];
@@ -80,7 +80,7 @@ class TokenScanner
 						$classDepth   = $braceDepth + 1;
 					}
 					$pendingAttributes = [];
-					$pendingStatic    = FALSE;
+					$pendingStatic     = FALSE;
 					break;
 
 				case T_STATIC:
@@ -111,7 +111,7 @@ class TokenScanner
 					}
 
 					$pendingAttributes = [];
-					$pendingStatic    = FALSE;
+					$pendingStatic     = FALSE;
 					break;
 
 				case T_PUBLIC:
@@ -126,7 +126,7 @@ class TokenScanner
 					if ( $id !== T_WHITESPACE && $id !== T_COMMENT && $id !== T_DOC_COMMENT ) {
 						if ( !empty( $pendingAttributes ) && $id !== T_STATIC ) {
 							$pendingAttributes = [];
-							$pendingStatic    = FALSE;
+							$pendingStatic     = FALSE;
 						}
 					}
 			}

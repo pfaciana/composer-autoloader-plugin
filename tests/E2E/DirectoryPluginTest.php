@@ -54,6 +54,29 @@ function dirRunPlugin ( array $config ): array
 	];
 }
 
+function dirDirectRunPlugin ( array $extra ): array
+{
+	$composerJson = dirProjectDir() . '/composer.json';
+	$original     = file_get_contents( $composerJson );
+
+	file_put_contents( $composerJson, json_encode( [
+		'config' => [ 'vendor-dir' => 'vendor' ],
+		'extra'  => $extra,
+	], JSON_PRETTY_PRINT ) );
+
+	try {
+		$path = AutoloadPlugin::directRun( $composerJson );
+	}
+	finally {
+		file_put_contents( $composerJson, $original );
+	}
+
+	return [
+		'path'    => $path,
+		'content' => $path ? file_get_contents( $path ) : NULL,
+	];
+}
+
 function dirNormalizeBootstrap ( string $content ): string
 {
 	$content = str_replace( "\r\n", "\n", $content );
@@ -157,5 +180,77 @@ describe( 'DirectoryPlugin e2e', function () {
 
 		expect( $path )->toBeNull();
 	} );
+
+} );
+
+describe( 'AutoloadPlugin::directRun e2e', function () {
+
+	it( 'generates the expected bootstrap file via directRun', function ( array $config, string $outputFile, string $expectedFile ) {
+		$result = dirDirectRunPlugin( [ 'autoload-by-dir' => $config ] );
+
+		$result['path'] = str_replace( '\\', '/', $result['path'] );
+
+		expect( $result['path'] )->toBe( str_replace( '\\', '/', dirVendorDir() . '/composer/' . $outputFile ) );
+		expect( $result['path'] )->toBeFile();
+		expect( $result['content'] )->toBeString();
+		expect( dirNormalizeBootstrap( $result['content'] ) )->toBe( dirExpectedBootstrap( $expectedFile ) );
+	} )->with( ( function () {
+		$cases = [];
+
+		foreach ( glob( dirFixtureBase() . '/expected/*.json' ) ?: [] as $jsonFile ) {
+			$name         = basename( $jsonFile, '.json' );
+			$phpFile      = $name . '.php';
+			$json         = json_decode( file_get_contents( $jsonFile ), TRUE, flags: JSON_THROW_ON_ERROR );
+			$config       = $json['config'] ?? $json;
+			$output       = $config['output'] ?? 'autoload_directory_files.php';
+			$cases[$name] = [ $config, $output, $phpFile ];
+		}
+
+		return $cases;
+	} )() );
+
+	it( 'returns null when no matching entries are found via directRun', function ( array $config ) {
+		$result = dirDirectRunPlugin( [ 'autoload-by-dir' => $config ] );
+
+		expect( $result['path'] )->toBeNull();
+		expect( $result['content'] )->toBeNull();
+		expect( glob( dirVendorDir() . '/composer/e2e-*.php' ) ?: [] )->toBeEmpty();
+	} )->with( [
+		'missing directory' => [
+			[
+				'patterns' => [ 'missing-dir' ],
+				'output'   => 'e2e-missing.php',
+			],
+		],
+		'no php files'      => [
+			[
+				'patterns' => [ 'no-extension' ],
+				'output'   => 'e2e-no-php.php',
+			],
+		],
+	] );
+
+	it( 'returns null when extra key is missing via directRun', function () {
+		$result = dirDirectRunPlugin( [] );
+
+		expect( $result['path'] )->toBeNull();
+	} );
+
+	it( 'throws when composer.json is missing', function () {
+		AutoloadPlugin::directRun( dirProjectDir() . '/missing-composer.json' );
+	} )->throws( InvalidArgumentException::class, 'composer.json not found' );
+
+	it( 'throws when composer.json is invalid JSON', function () {
+		$composerJson = dirProjectDir() . '/composer.json';
+		$original     = file_get_contents( $composerJson );
+		file_put_contents( $composerJson, 'not json {' );
+
+		try {
+			AutoloadPlugin::directRun( $composerJson );
+		}
+		finally {
+			file_put_contents( $composerJson, $original );
+		}
+	} )->throws( InvalidArgumentException::class, 'Invalid composer.json' );
 
 } );

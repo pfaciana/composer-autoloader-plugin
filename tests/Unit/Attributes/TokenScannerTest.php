@@ -21,47 +21,47 @@ describe( 'TokenScanner', function () {
 				}
 			}
 		} )->with( [
-			'function with attribute' => [
+			'function with attribute'    => [
 				"#[Autoload]\nfunction bootstrap() {}",
 				[ [ 'type' => 'function', 'name' => 'bootstrap', 'attribute' => 'Autoload' ] ],
 			],
-			'static method'           => [
+			'static method'              => [
 				"class Service {\n    #[Autoload]\n    public static function init() {}\n}",
 				[ [ 'type' => 'method', 'name' => 'init', 'class' => 'Service', 'isStatic' => TRUE ] ],
 			],
-			'non-static method'       => [
+			'non-static method'          => [
 				"class Service {\n    #[Autoload]\n    public function init() {}\n}",
 				[ [ 'type' => 'method', 'name' => 'init', 'isStatic' => FALSE ] ],
 			],
-			'positional priority'     => [
+			'positional priority'        => [
 				"#[Autoload(5)]\nfunction bootstrap() {}",
 				[ [ 'priority' => 5.0 ] ],
 			],
-			'named priority'          => [
+			'named priority'             => [
 				"#[Autoload(priority: 15)]\nfunction bootstrap() {}",
 				[ [ 'priority' => 15.0 ] ],
 			],
-			'namespaced attribute'    => [
+			'namespaced attribute'       => [
 				"#[App\\Attributes\\Autoload]\nfunction bootstrap() {}",
 				[ [ 'attribute' => 'App\\Attributes\\Autoload' ] ],
 			],
-			'fully qualified attr'    => [
+			'fully qualified attr'       => [
 				"#[\\App\\Attributes\\Autoload]\nfunction bootstrap() {}",
 				[ [ 'attribute' => '\\App\\Attributes\\Autoload' ] ],
 			],
-			'no priority (null)'      => [
+			'no priority (null)'         => [
 				"#[Autoload]\nfunction bootstrap() {}",
 				[ [ 'priority' => NULL ] ],
 			],
-			'namespaced class FQCN'   => [
+			'namespaced class FQCN'      => [
 				"namespace App\\Services;\n\nclass Logger {\n    #[Autoload]\n    public static function register() {}\n}",
 				[ [ 'class' => 'App\\Services\\Logger' ] ],
 			],
-			'no attribute (empty)'    => [
+			'no attribute (empty)'       => [
 				"function foo() {}",
 				[],
 			],
-			'multiple candidates'     => [
+			'multiple candidates'        => [
 				"namespace App;\n\n#[Autoload(1)]\nfunction first() {}\n\nclass Service {\n    #[Autoload(2)]\n    public static function init() {}\n}\n\n#[Autoload(3)]\nfunction last() {}",
 				[
 					[ 'priority' => 1.0 ],
@@ -71,53 +71,53 @@ describe( 'TokenScanner', function () {
 			],
 
 			// Edge cases: attributes should NOT leak or be misapplied
-			'attr on class no leak'   => [
+			'attr on class no leak'      => [
 				"#[ClassAttr]\nclass Foo {\n    public function bar() {}\n}",
 				[],
 			],
-			'attr on class + method'  => [
+			'attr on class + method'     => [
 				"#[ClassAttr]\nclass Foo {\n    #[MethodAttr]\n    public static function bar() {}\n}",
 				[ [ 'name' => 'bar', 'attribute' => 'MethodAttr' ] ],
 			],
-			'attr on property skip'   => [
+			'attr on property skip'      => [
 				"class Foo {\n    #[PropAttr]\n    public int \$x;\n    #[Autoload]\n    public static function init() {}\n}",
 				[ [ 'name' => 'init', 'attribute' => 'Autoload' ] ],
 			],
 
 			// Access modifiers and signatures
-			'private static method'   => [
+			'private static method'      => [
 				"class Foo {\n    #[Autoload]\n    private static function init() {}\n}",
 				[ [ 'name' => 'init', 'isStatic' => TRUE ] ],
 			],
-			'protected static method' => [
+			'protected static method'    => [
 				"class Foo {\n    #[Autoload]\n    protected static function init() {}\n}",
 				[ [ 'name' => 'init', 'isStatic' => TRUE ] ],
 			],
-			'method with return type' => [
+			'method with return type'    => [
 				"class Foo {\n    #[Autoload]\n    public static function init(): void {}\n}",
 				[ [ 'name' => 'init' ] ],
 			],
-			'method with params'      => [
+			'method with params'         => [
 				"class Foo {\n    #[Autoload]\n    public static function init(\$a, int \$b = 5): void {}\n}",
 				[ [ 'name' => 'init' ] ],
 			],
-			'final static method'     => [
+			'final static method'        => [
 				"class Foo {\n    #[Autoload]\n    final public static function init() {}\n}",
 				[ [ 'name' => 'init', 'isStatic' => TRUE ] ],
 			],
 
 			// Trait and interface
-			'trait method'            => [
+			'trait method'               => [
 				"trait MyTrait {\n    #[Autoload]\n    public static function init() {}\n}",
 				[ [ 'name' => 'init', 'class' => 'MyTrait' ] ],
 			],
-			'interface method'        => [
+			'interface method'           => [
 				"interface MyInterface {\n    #[Autoload]\n    public function init();\n}",
 				[ [ 'name' => 'init', 'class' => 'MyInterface', 'isStatic' => FALSE ] ],
 			],
 
 			// Multiple attribute groups should all be captured
-			'multi attr groups'       => [
+			'multi attr groups'          => [
 				"#[First]\n#[Second(5)]\nfunction foo() {}",
 				[
 					[ 'attribute' => 'First', 'priority' => NULL ],
@@ -133,15 +133,15 @@ describe( 'TokenScanner', function () {
 			],
 
 			// Edge cases for coverage
-			'attr with nested array'  => [
+			'attr with nested array'     => [
 				"#[Attr([[1, 2], [3, 4]])]\nfunction foo() {}",
 				[ [ 'name' => 'foo', 'attribute' => 'Attr' ] ],
 			],
-			'attr with constant prio' => [
+			'attr with constant prio'    => [
 				"#[Autoload(PHP_EOL)]\nfunction foo() {}",
 				[ [ 'name' => 'foo', 'priority' => NULL ] ],
 			],
-			'anonymous function'      => [
+			'anonymous function'         => [
 				'$fn = #[Attr] function() {};',
 				[],
 			],
