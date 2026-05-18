@@ -43,6 +43,10 @@ class AutoloadPlugin
 		$entries = $this->getEntries( $config['cwd'], $config );
 
 		if ( empty( $entries ) ) {
+			if ( file_exists( $config['output'] ) ) {
+				@unlink( $config['output'] );
+			}
+
 			$this->io->write( '<info>Render Autoloader:</info> No directory autoload files found.' );
 
 			return NULL;

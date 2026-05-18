@@ -137,6 +137,21 @@ describe( 'DirectoryPlugin e2e', function () {
 		],
 	] );
 
+	it( 'removes stale output when no matching entries are found', function () {
+		$output = dirVendorDir() . '/composer/e2e-stale.php';
+
+		mkdir( dirname( $output ), recursive: TRUE );
+		file_put_contents( $output, '<?php // stale' );
+
+		$result = dirRunPlugin( [
+			'patterns' => [ 'missing-dir' ],
+			'output'   => 'e2e-stale.php',
+		] );
+
+		expect( $result['path'] )->toBeNull();
+		expect( $output )->not->toBeFile();
+	} );
+
 	it( 'returns null when config key is missing', function () {
 		$path = ( new AutoloadPlugin( new NullIO(), dirVendorDir() ) )->run( [] );
 
