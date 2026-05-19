@@ -18,6 +18,12 @@ class AutoloadPlugin
 	private IOInterface $io;
 	private string $vendorDir;
 
+	/**
+	 * Create plugin instance.
+	 *
+	 * @param IOInterface $io        Composer IO for console output
+	 * @param string      $vendorDir Absolute path to vendor directory
+	 */
 	public function __construct ( IOInterface $io, string $vendorDir )
 	{
 		$this->io        = $io;
@@ -56,6 +62,18 @@ class AutoloadPlugin
 		return $result['path'];
 	}
 
+	/**
+	 * Generate bootstrap directly from composer.json path.
+	 *
+	 * Standalone entry point without Composer runtime.
+	 * Parses composer.json for config and vendor-dir.
+	 *
+	 * @throws \InvalidArgumentException If composer.json not found or invalid
+	 *
+	 * @param string $composerJson Absolute path to composer.json
+	 *
+	 * @return string|null Path to generated bootstrap or null if no files
+	 */
 	public static function directRun ( string $composerJson ): ?string
 	{
 		if ( !is_file( $composerJson ) ) {
@@ -73,15 +91,52 @@ class AutoloadPlugin
 			throw new \InvalidArgumentException( "Invalid composer.json: {$composerJson}" );
 		}
 
-		$root      = dirname( $composerJson );
-		$vendorDir = $json['config']['vendor-dir'] ?? 'vendor';
-		$vendorDir = IncludeFile::is_absolute_path( $vendorDir )
-			? $vendorDir
-			: IncludeFile::add_trailing_slash( $root ) . IncludeFile::strip_preceding_slash( $vendorDir );
+		$root = dirname( $composerJson );
+		if ( !IncludeFile::is_absolute_path( $vendorDir = $json['config']['vendor-dir'] ?? 'vendor' ) ) {
+			$vendorDir = IncludeFile::add_trailing_slash( $root ) . IncludeFile::strip_preceding_slash( $vendorDir );
+		}
 
 		return self::build( $json['extra'] ?? [], IncludeFile::normalize( $vendorDir ) )['path'];
 	}
 
+	/**
+	 * Generate bootstrap at runtime with custom config.
+	 *
+	 * For dynamic bootstrap generation outside Composer events.
+	 *
+	 * @throws \InvalidArgumentException If vendorDir not absolute
+	 *
+	 * @param string       $vendorDir Absolute path to vendor directory
+	 * @param string|array $config    config array
+	 *
+	 * @return string|null Path to generated bootstrap or null if no files
+	 */
+	public static function runtime ( string $vendorDir, string|array $config ): ?string
+	{
+		if ( !IncludeFile::is_absolute_path( $vendorDir ) ) {
+			throw new \InvalidArgumentException( "Invalid vendorDir, must be an absolute directory: {$vendorDir}" );
+		}
+
+		$config = array_merge( [
+			'force'   => FALSE,
+			'cleanup' => FALSE,
+		], is_array( $config ) ? $config : [ 'patterns' => $config ] );
+
+		$extra = [ 'autoload-by-dir' => $config ];
+
+		return self::build( $extra, IncludeFile::normalize( $vendorDir ) )['path'];
+	}
+
+	/**
+	 * Core build orchestration.
+	 *
+	 * Scans files, checks staleness, generates bootstrap if needed.
+	 *
+	 * @param array  $extra     Composer extra config (must contain autoload-by-dir)
+	 * @param string $vendorDir Absolute path to vendor directory
+	 *
+	 * @return array{path: ?string, count: int} Output path (null if none) and entry count
+	 */
 	public static function build ( array $extra, string $vendorDir ): array
 	{
 		if ( !isset( $extra['autoload-by-dir'] ) ) {
@@ -90,18 +145,13 @@ class AutoloadPlugin
 
 		$config  = self::getConfig( $extra, $vendorDir );
 		$entries = self::getEntries( $config['cwd'], $config );
-
-		if ( empty( $entries ) ) {
-			if ( file_exists( $config['output'] ) ) {
-				@unlink( $config['output'] );
-			}
-
-			return [ 'path' => NULL, 'count' => 0 ];
+		if ( $config['force'] || self::isStale( $config['output'], $entries, $config['cwf'] ) ) {
+			self::makeFile( $config, $entries );
 		}
 
-		Filesystem::writeFile( $config['output'], BootstrapRenderer::render( $entries ) );
+		$outputFile = file_exists( $config['output'] ) ? $config['output'] : NULL;
 
-		return [ 'path' => $config['output'], 'count' => count( $entries ) ];
+		return [ 'path' => $outputFile, 'count' => count( $entries ) ];
 	}
 
 	/**
@@ -114,6 +164,9 @@ class AutoloadPlugin
 	 *     import: Import,
 	 *     output: string,
 	 *     cwd: string,
+	 *     cwf: ?string,
+	 *     force: bool,
+	 *     cleanup: bool,
 	 *     phpOnly: bool,
 	 *     maxDepth: int,
 	 * } Directory autoload config
@@ -133,6 +186,9 @@ class AutoloadPlugin
 			'import'   => 'require_once',
 			'output'   => 'autoload_directory_files.php',
 			'cwd'      => dirname( $vendorDir ),
+			'cwf'      => NULL,
+			'force'    => TRUE,
+			'cleanup'  => TRUE,
 			'phpOnly'  => TRUE,
 			'maxDepth' => 25,
 		], $extra['autoload-by-dir'] );
@@ -165,6 +221,9 @@ class AutoloadPlugin
 	 *     import: Import,
 	 *     output: string,
 	 *     cwd: string,
+	 *     cwf: ?string,
+	 *     force: bool,
+	 *     cleanup: bool,
 	 *     phpOnly: bool,
 	 *     maxDepth: int,
 	 * }             $config  Plugin config
@@ -184,6 +243,7 @@ class AutoloadPlugin
 			'maxDepth' => $config['maxDepth'],
 		] );
 
+		/** @var \SplFileInfo $fileInfo */
 		foreach ( $phpFiles as $phpFile => $fileInfo ) {
 			$entries[] = new Entry(
 				type: 'file',
@@ -196,6 +256,7 @@ class AutoloadPlugin
 				attribute: NULL,
 				import: $config['import'],
 				check: FALSE,
+				mtime: $fileInfo->getMTime(),
 			);
 		}
 
@@ -204,6 +265,74 @@ class AutoloadPlugin
 		return $entries;
 	}
 
+	/**
+	 * Check if bootstrap needs regeneration.
+	 *
+	 * Stale if: output missing but entries exist, or any source newer than output.
+	 *
+	 * @param string      $outputFile Bootstrap file path
+	 * @param Entry[]     $entries    Entries with mtime to check
+	 * @param string|null $cwf        Optional caller file to include in mtime check
+	 *
+	 * @return bool True if regeneration needed
+	 */
+	public static function isStale ( string $outputFile, array $entries, ?string $cwf = NULL )
+	{
+		if ( !file_exists( $outputFile ) !== empty( $entries ) ) {
+			return TRUE;
+		}
+
+		if ( empty( $entries ) ) {
+			return FALSE;
+		}
+
+		$mtime    = filemtime( $outputFile );
+		$mTimeMax = max( array_map( fn( Entry $e ) => $e->mtime, $entries ) );
+		if ( !empty( $cwf ) ) {
+			$mTimeMax = max( $mTimeMax, filemtime( $cwf ) );
+		}
+
+		return $mtime <= $mTimeMax;
+	}
+
+	/**
+	 * Write bootstrap file or clean up if empty.
+	 *
+	 * Deletes output if entries empty and cleanup enabled.
+	 *
+	 * @param array   $config  Plugin config with output path and cleanup flag
+	 * @param Entry[] $entries Discovered file entries to render
+	 *
+	 * @return int|bool|null Bytes written, true if deleted, null if no action
+	 */
+	public static function makeFile ( $config, $entries )
+	{
+		if ( empty( $entries ) ) {
+			if ( file_exists( $config['output'] ) ) {
+				if ( $config['cleanup'] ) {
+					return @unlink( $config['output'] );
+				}
+			}
+			else {
+				return NULL;
+			}
+		}
+
+		return Filesystem::writeFile( $config['output'], BootstrapRenderer::render( $entries ) );
+	}
+
+	/**
+	 * Build file filter callback for directory scanning.
+	 *
+	 * When phpOnly=true, filters to .php files matching patterns.
+	 * Optimizes directory traversal via terminating directory patterns.
+	 *
+	 * @param string      $baseDir      Base directory for relative path calculation
+	 * @param bool        $phpOnly      Filter to .php files only
+	 * @param IncludeFile $includeFiles Pattern matcher instance
+	 *
+	 * @return callable|false Filter callback or false for no filtering
+	 */
 	public static function getCallbackFilter ( string $baseDir, bool $phpOnly, IncludeFile $includeFiles ): callable|false
 	{
 		if ( !$phpOnly ) {

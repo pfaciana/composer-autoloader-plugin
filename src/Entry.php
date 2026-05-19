@@ -4,7 +4,7 @@ declare( strict_types=1 );
 
 namespace Render\Autoloader;
 
-readonly class Entry
+class Entry
 {
 	/**
 	 * Props that can be overridden via with() and withDefaults().
@@ -33,18 +33,20 @@ readonly class Entry
 	 * @param string|null                $attribute Attribute short name (e.g., "AutoRun")
 	 * @param Import|null                $import    Import strategy (null = use default)
 	 * @param bool|null                  $check     Include in function_exists check (null = use default)
+	 * @param int                        $mtime     File modification time
 	 */
 	public function __construct (
-		public string  $type,
-		public string  $name,
-		public ?string $class,
-		public bool    $isStatic,
-		public ?float  $priority,
-		public string  $file,
-		public int     $line,
-		public ?string $attribute = NULL,
-		public ?Import $import = NULL,
-		public ?bool   $check = NULL,
+		public string         $type,
+		public string         $name,
+		public ?string        $class,
+		public bool           $isStatic,
+		public ?float         $priority,
+		public string         $file,
+		public int            $line,
+		public ?string        $attribute = NULL,
+		public ?Import        $import = NULL,
+		public ?bool          $check = NULL,
+		public null|int|false $mtime = NULL,
 	) {
 	}
 
@@ -108,6 +110,7 @@ readonly class Entry
 			attribute: $this->attribute,
 			import: $values['import'] ?? $this->import,
 			check: $values['check'] ?? $this->check,
+			mtime: $this->mtime,
 		);
 	}
 

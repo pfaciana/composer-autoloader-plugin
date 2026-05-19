@@ -239,6 +239,37 @@ The configured attribute can also set default argument values:
 }
 ```
 
+### Runtime
+
+`AutoRunPlugin::runtime()` is a runtime version of the Plugin. It operates outside the context of Composer. It scans source code only. It does not load scanned files during discovery, so runtime attribute usage must be simple and statically readable.
+
+Runtime-only rules:
+
+- Do not use attribute aliases such as `use AutoRun as Run; #[Run]`.
+- Use literal attribute arguments only: numbers, strings, booleans, or `null`.
+- Do not use constants, class constants, enum values, expressions, or function calls in runtime attribute arguments.
+
+Avoid in runtime mode:
+
+```php
+use Render\Autoloader\Attributes\AutoRun as Run;
+
+#[Run]
+function bootstrap(): void
+{
+}
+
+class Plugin
+{
+    #[AutoRun(priority: self::BOOT_PRIORITY)]
+    public static function boot(): void
+    {
+    }
+}
+```
+
+Use Composer/plugin generation when you need PHP reflection to resolve aliases, constants, or more complex attribute arguments.
+
 ---
 
 ## Directory Autoloading
@@ -316,6 +347,10 @@ String patterns can also be newline-separated:
 | `output`   | `"autoload_directory_files.php"` | Relative paths write to `vendor/composer`; absolute paths are used as-is. |
 | `cwd`      | project root                     | Base directory for `patterns`.                                            |
 | `maxDepth` | `25`                             | Maximum directory depth.                                                  |
+
+### Runtime
+
+`AutoloadPlugin::runtime()` is a runtime version of the Plugin. It operates outside the context of Composer.
 
 ---
 

@@ -6,6 +6,16 @@ namespace Render\Autoloader;
 
 class Filesystem
 {
+	/**
+	 * Create directory recursively with inherited permissions.
+	 *
+	 * Inherits permissions from nearest existing parent directory.
+	 * Blocks path traversal attempts (../).
+	 *
+	 * @param string $target Absolute path to create
+	 *
+	 * @return bool True if directory exists or was created
+	 */
 	public static function makeDirectory ( string $target ): bool
 	{
 		$target = str_replace( '//', '/', $target );
