@@ -6,13 +6,12 @@
 .playwright
 .playwright-cli
 .repos
+.run
 .mcp.json
 .vscode
 package-lock.json
 pnpm-lock.yaml
 composer.lock
-!tests/Fixtures/**/package-lock.json
-!tests/Fixtures/**/composer.lock
 blueprint.json
 AGENTS.md
 CLAUDE.md
@@ -68,6 +67,8 @@ vendor/*
 !tests/Fixtures/**/node_modules/**
 !tests/Fixtures/**/vendor/
 !tests/Fixtures/**/vendor/**
+!tests/Fixtures/**/package-lock.json
+!tests/Fixtures/**/composer.lock
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

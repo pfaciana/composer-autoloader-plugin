@@ -15,6 +15,17 @@ function dirProjectDir (): string
 	return dirFixtureBase() . '/project-dir';
 }
 
+function dirEnsureGitHookFixture (): void
+{
+	$hook = dirProjectDir() . '/.git/hooks/pre-commit.php';
+
+	if ( !is_dir( dirname( $hook ) ) ) {
+		mkdir( dirname( $hook ), recursive: TRUE );
+	}
+
+	file_put_contents( $hook, '<?php // pre-commit.php' . PHP_EOL );
+}
+
 function dirVendorDir (): string
 {
 	return dirProjectDir() . '/vendor';
@@ -104,6 +115,7 @@ function dirExpectedBootstrap ( string $file ): string
 }
 
 beforeEach( function () {
+	dirEnsureGitHookFixture();
 	dirCleanupGeneratedFiles();
 } );
 
