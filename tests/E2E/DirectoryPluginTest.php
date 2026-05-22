@@ -342,6 +342,26 @@ describe( 'AutoloadPlugin::runtime e2e', function () {
 		expect( filemtime( $output ) )->toBeGreaterThanOrEqual( $now );
 	} );
 
+	it( 'regenerates when cwf is a newer mtime integer', function () {
+		$config = [
+			'patterns' => [ 'src' ],
+			'output'   => 'e2e-stale-cwf-int.php',
+			'force'    => TRUE,
+		];
+		dirRuntimePlugin( $config );
+
+		$output = dirVendorDir() . '/composer/e2e-stale-cwf-int.php';
+		$now    = time();
+		touch( $output, $now - 100 );
+		touch( dirProjectDir() . '/src/bootstrap.php', $now - 200 );
+
+		$config['force'] = FALSE;
+		$config['cwf']   = $now;
+		dirRuntimePlugin( $config );
+
+		expect( filemtime( $output ) )->toBeGreaterThanOrEqual( $now );
+	} );
+
 	it( 'writes empty bootstrap when cleanup=FALSE and no entries', function () {
 		$output = dirVendorDir() . '/composer/e2e-cleanup-false.php';
 		mkdir( dirname( $output ), recursive: TRUE );

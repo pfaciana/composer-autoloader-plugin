@@ -318,6 +318,27 @@ describe( 'AutoRunPlugin::runtime e2e', function () {
 		expect( filemtime( $output ) )->toBeGreaterThanOrEqual( $now );
 	} );
 
+	it( 'regenerates when cwf is a newer mtime integer', function () {
+		$config = [
+			'attribute' => 'AutoRun',
+			'patterns'  => [ 'src' ],
+			'output'    => 'e2e-stale-cwf-int.php',
+			'force'     => TRUE,
+		];
+		fileRuntimeAutoRunPlugin( $config );
+
+		$output = fileVendorDir() . '/composer/e2e-stale-cwf-int.php';
+		$now    = time();
+		touch( $output, $now - 100 );
+		touch( fileFixtureRoot() . '/src/Example.php', $now - 200 );
+
+		$config['force'] = FALSE;
+		$config['cwf']   = $now;
+		fileRuntimeAutoRunPlugin( $config );
+
+		expect( filemtime( $output ) )->toBeGreaterThanOrEqual( $now );
+	} );
+
 	it( 'writes empty bootstrap when cleanup=FALSE and no entries', function () {
 		$output = fileVendorDir() . '/composer/e2e-cleanup-false.php';
 		mkdir( dirname( $output ), recursive: TRUE );

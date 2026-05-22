@@ -164,7 +164,7 @@ class AutoloadPlugin
 	 *     import: Import,
 	 *     output: string,
 	 *     cwd: string,
-	 *     cwf: ?string,
+	 *     cwf: string|int|null,
 	 *     force: bool,
 	 *     cleanup: bool,
 	 *     phpOnly: bool,
@@ -221,7 +221,7 @@ class AutoloadPlugin
 	 *     import: Import,
 	 *     output: string,
 	 *     cwd: string,
-	 *     cwf: ?string,
+	 *     cwf: string|int|null,
 	 *     force: bool,
 	 *     cleanup: bool,
 	 *     phpOnly: bool,
@@ -270,13 +270,13 @@ class AutoloadPlugin
 	 *
 	 * Stale if: output missing but entries exist, or any source newer than output.
 	 *
-	 * @param string      $outputFile Bootstrap file path
-	 * @param Entry[]     $entries    Entries with mtime to check
-	 * @param string|null $cwf        Optional caller file to include in mtime check
+	 * @param string          $outputFile Bootstrap file path
+	 * @param Entry[]         $entries    Entries with mtime to check
+	 * @param string|int|null $cwf        Optional caller file or mtime to include in mtime check
 	 *
 	 * @return bool True if regeneration needed
 	 */
-	public static function isStale ( string $outputFile, array $entries, ?string $cwf = NULL )
+	public static function isStale ( string $outputFile, array $entries, string|int|null $cwf = NULL )
 	{
 		if ( !file_exists( $outputFile ) !== empty( $entries ) ) {
 			return TRUE;
@@ -289,7 +289,7 @@ class AutoloadPlugin
 		$mtime    = filemtime( $outputFile );
 		$mTimeMax = max( array_map( fn( Entry $e ) => $e->mtime, $entries ) );
 		if ( !empty( $cwf ) ) {
-			$mTimeMax = max( $mTimeMax, filemtime( $cwf ) );
+			$mTimeMax = max( $mTimeMax, is_string( $cwf ) ? filemtime( $cwf ) : $cwf );
 		}
 
 		return $mtime <= $mTimeMax;
