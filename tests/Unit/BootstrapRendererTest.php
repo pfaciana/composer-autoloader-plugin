@@ -140,6 +140,19 @@ describe( 'BootstrapRenderer', function () {
 			expect( $footerPos )->toBeGreaterThan( $callPos );
 		} );
 
+		it( 'preserves custom code newlines', function () {
+			$result = BootstrapRenderer::render(
+				[],
+				[
+					'generatedAt' => '2024-01-01 12:00:00',
+					'header'      => "\ndefined( 'ABSPATH' ) || exit;\n",
+					'footer'      => [ "\ndo_action( 'loaded' );", '' ],
+				],
+			);
+
+			expect( $result )->toContain( "\n\ndefined( 'ABSPATH' ) || exit;\n\n\ndo_action( 'loaded' );\n\n" );
+		} );
+
 	} );
 
 } );
