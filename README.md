@@ -98,6 +98,8 @@ vendor/composer/autoload_bootstrap.php
 | `attribute` | `"AutoRun"`                | Attribute name to scan for. Can include default args.                     |
 | `patterns`  | `["src"]`                  | Files/directories to scan from `cwd`.                                     |
 | `output`    | `"autoload_bootstrap.php"` | Relative paths write to `vendor/composer`; absolute paths are used as-is. |
+| `header`    | `""`                       | PHP code inserted before generated imports and calls.`String\|String[]`.  |
+| `footer`    | `""`                       | PHP code inserted after generated imports and calls. `String\|String[]`.  |
 | `cwd`       | project root               | Base directory for `patterns`.                                            |
 | `maxDepth`  | `25`                       | Maximum directory depth.                                                  |
 
@@ -345,6 +347,8 @@ String patterns can also be newline-separated:
 | `patterns` | `["*"]`                          | Files/directories to import from `cwd`.                                   |
 | `import`   | `require_once`                   | Import strategy for each matched file.                                    |
 | `output`   | `"autoload_directory_files.php"` | Relative paths write to `vendor/composer`; absolute paths are used as-is. |
+| `header`   | `""`                             | PHP code inserted before generated imports. `String\|String[]`.           |
+| `footer`   | `""`                             | PHP code inserted after generated imports. `String\|String[]`.            |
 | `cwd`      | project root                     | Base directory for `patterns`.                                            |
 | `maxDepth` | `25`                             | Maximum directory depth.                                                  |
 

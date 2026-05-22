@@ -167,6 +167,9 @@ class AutoRunPlugin
 	 *     attribute: Attribute,
 	 *     patterns: string|string[],
 	 *     output: string,
+	 *     header: string|string[],
+	 *     footer: string|string[],
+	 *     generatedAt: ?string,
 	 *     cwd: string,
 	 *     cwf: string|int|null,
 	 *     force: bool,
@@ -187,16 +190,19 @@ class AutoRunPlugin
 		}
 
 		$config = array_merge( [
-			'attribute' => "AutoRun",
-			'patterns'  => [ '*' ],
-			'output'    => 'autoload_bootstrap.php',
-			'cwd'       => dirname( $vendorDir ),
-			'cwf'       => NULL,
-			'force'     => TRUE,
-			'cleanup'   => TRUE,
-			'runtime'   => FALSE,
-			'phpOnly'   => TRUE,
-			'maxDepth'  => 25,
+			'attribute'   => "AutoRun",
+			'patterns'    => [ '*' ],
+			'output'      => 'autoload_bootstrap.php',
+			'header'      => '',
+			'footer'      => '',
+			'generatedAt' => NULL,
+			'cwd'         => dirname( $vendorDir ),
+			'cwf'         => NULL,
+			'force'       => TRUE,
+			'cleanup'     => TRUE,
+			'runtime'     => FALSE,
+			'phpOnly'     => TRUE,
+			'maxDepth'    => 25,
 		], $extra['autoload-by-attr'] );
 
 		if ( is_string( $config['patterns'] ) ) {
@@ -248,6 +254,9 @@ class AutoRunPlugin
 	 *     attribute: Attribute,
 	 *     patterns: string|string[],
 	 *     output: string,
+	 *     header: string|string[],
+	 *     footer: string|string[],
+	 *     generatedAt: ?string,
 	 *     cwd: string,
 	 *     cwf: string|int|null,
 	 *     force: bool,
@@ -334,7 +343,7 @@ class AutoRunPlugin
 		], fn( $v ) => $v !== NULL );
 
 		$entries = CallBuilder::build( $entries, $defaults ?: NULL );
-		$content = BootstrapRenderer::render( $entries );
+		$content = BootstrapRenderer::render( $entries, $config );
 
 		return Filesystem::writeFile( $config['output'], $content );
 	}

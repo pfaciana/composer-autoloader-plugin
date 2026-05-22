@@ -163,6 +163,9 @@ class AutoloadPlugin
 	 *     patterns: string|string[],
 	 *     import: Import,
 	 *     output: string,
+	 *     header: string|string[],
+	 *     footer: string|string[],
+	 *     generatedAt: ?string,
 	 *     cwd: string,
 	 *     cwf: string|int|null,
 	 *     force: bool,
@@ -182,15 +185,18 @@ class AutoloadPlugin
 		}
 
 		$config = array_merge( [
-			'patterns' => [ '*' ],
-			'import'   => 'require_once',
-			'output'   => 'autoload_directory_files.php',
-			'cwd'      => dirname( $vendorDir ),
-			'cwf'      => NULL,
-			'force'    => TRUE,
-			'cleanup'  => TRUE,
-			'phpOnly'  => TRUE,
-			'maxDepth' => 25,
+			'patterns'    => [ '*' ],
+			'import'      => 'require_once',
+			'output'      => 'autoload_directory_files.php',
+			'header'      => '',
+			'footer'      => '',
+			'generatedAt' => NULL,
+			'cwd'         => dirname( $vendorDir ),
+			'cwf'         => NULL,
+			'force'       => TRUE,
+			'cleanup'     => TRUE,
+			'phpOnly'     => TRUE,
+			'maxDepth'    => 25,
 		], $extra['autoload-by-dir'] );
 
 		if ( is_string( $config['patterns'] ) ) {
@@ -220,6 +226,9 @@ class AutoloadPlugin
 	 *     patterns: string|string[],
 	 *     import: Import,
 	 *     output: string,
+	 *     header: string|string[],
+	 *     footer: string|string[],
+	 *     generatedAt: ?string,
 	 *     cwd: string,
 	 *     cwf: string|int|null,
 	 *     force: bool,
@@ -318,7 +327,7 @@ class AutoloadPlugin
 			}
 		}
 
-		return Filesystem::writeFile( $config['output'], BootstrapRenderer::render( $entries ) );
+		return Filesystem::writeFile( $config['output'], BootstrapRenderer::render( $entries, $config ) );
 	}
 
 	/**

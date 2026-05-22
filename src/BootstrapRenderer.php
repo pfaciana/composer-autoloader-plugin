@@ -9,32 +9,52 @@ class BootstrapRenderer
 	/**
 	 * Render complete bootstrap file content.
 	 *
-	 * @param Entry[]     $entries     Sorted entries to render
-	 * @param string|null $generatedAt Timestamp for header (defaults to now)
+	 * @param Entry[] $entries Sorted entries to render
+	 * @param array{
+	 *     header?: string|string[]|null,
+	 *     footer?: string|string[]|null,
+	 *     generatedAt?: string|null,
+	 * }              $config  Render config
 	 *
 	 * @return string Complete PHP file content
 	 */
-	public static function render ( array $entries, ?string $generatedAt = NULL ): string
+	public static function render ( array $entries, array $config ): string
 	{
-		$generatedAt ??= date( 'Y-m-d H:i:s' );
-
 		$lines = [
-			self::renderHeader( $generatedAt ),
+			self::renderHeaderComments( $config['generatedAt'] ?? NULL ),
+			self::renderCustomCode( $config['header'] ?? NULL ),
 			self::renderRequires( $entries ),
 			self::renderCalls( $entries ),
+			self::renderCustomCode( $config['footer'] ?? NULL ),
 		];
 
-		return implode( "\n", array_filter( $lines ) ) . "\n";
+		return implode( "\n", array_filter( $lines, fn( $line ) => $line !== '' ) ) . "\n";
 	}
 
 	/**
-	 * Render file header with timestamp.
+	 * Normalize user-provided custom PHP code.
+	 *
+	 * @param string|string[]|null $code PHP code to insert
+	 *
+	 * @return string PHP code or empty string
+	 */
+	private static function renderCustomCode ( string|array|null $code ): string
+	{
+		if ( is_array( $code ) ) {
+			$code = implode( "\n", array_map( 'strval', $code ) );
+		}
+
+		return trim( $code ?? '' );
+	}
+
+	/**
+	 * Render generated file header comments with timestamp.
 	 *
 	 * @param string|null $generatedAt Timestamp (defaults to now)
 	 *
-	 * @return string PHP open tag and comment block
+	 * @return string PHP open tag and generated comment block
 	 */
-	public static function renderHeader ( ?string $generatedAt = NULL ): string
+	public static function renderHeaderComments ( ?string $generatedAt = NULL ): string
 	{
 		$generatedAt ??= date( 'Y-m-d H:i:s' );
 
