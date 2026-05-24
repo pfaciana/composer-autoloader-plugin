@@ -1,6 +1,6 @@
 {
 	"name": "pfaciana/composer-autoloader-plugin",
-	"version": "0.4.1",
+	"version": "0.4.2",
 	"description": "Composer plugin that scans for #[Autoload] attributes and generates bootstrap code",
 	"keywords": [],
 	"license": "GPL-2.0-only",
@@ -42,6 +42,6 @@
 	"require": {
 		"php": "^8.2",
 		"composer-plugin-api": "^2.0",
-		"pfaciana/includefile": "^0.1.1"
+		"pfaciana/includefile": "^0"
 	}
 }
