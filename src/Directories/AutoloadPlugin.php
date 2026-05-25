@@ -248,7 +248,9 @@ class AutoloadPlugin
 		$baseDir = IncludeFile::strip_trailing_slash( IncludeFile::normalize( $baseDir ) );
 
 		$phpFiles = IncludeFile::get_files( $baseDir, [
-			'filter'   => self::getCallbackFilter( $baseDir, $config['phpOnly'], $includeFiles ),
+			'filter'   => $includeFiles->makeFilter( $baseDir, [
+				'file' => $config['phpOnly'] ? ( fn( $fileInfo ): ?bool => strtolower( $fileInfo->getExtension() ) === 'php' ? NULL : FALSE ) : NULL,
+			] ),
 			'maxDepth' => $config['maxDepth'],
 		] );
 
@@ -330,40 +332,4 @@ class AutoloadPlugin
 		return Filesystem::writeFile( $config['output'], BootstrapRenderer::render( $entries, $config ) );
 	}
 
-	/**
-	 * Build file filter callback for directory scanning.
-	 *
-	 * When phpOnly=true, filters to .php files matching patterns.
-	 * Optimizes directory traversal via terminating directory patterns.
-	 *
-	 * @param string      $baseDir      Base directory for relative path calculation
-	 * @param bool        $phpOnly      Filter to .php files only
-	 * @param IncludeFile $includeFiles Pattern matcher instance
-	 *
-	 * @return callable|false Filter callback or false for no filtering
-	 */
-	public static function getCallbackFilter ( string $baseDir, bool $phpOnly, IncludeFile $includeFiles ): callable|false
-	{
-		if ( !$phpOnly ) {
-			return $includeFiles->getDefaultCallbackFilter( $baseDir );
-		}
-
-		$includeDirs = IncludeFile::get_terminating_directory_instance( $includeFiles->patterns );
-
-		$baseDir = IncludeFile::add_trailing_slash( IncludeFile::normalize( $baseDir ) );
-
-		return function ( $fileInfo, $absPath ) use ( $baseDir, $includeFiles, $includeDirs ): bool {
-			$relPath = IncludeFile::strip_base( $absPath, $baseDir );
-
-			if ( is_dir( $absPath ) ) {
-				return $includeDirs ? $includeDirs->includes( $relPath ) : TRUE;
-			}
-
-			if ( !str_ends_with( strtolower( $relPath ), '.php' ) ) {
-				return FALSE;
-			}
-
-			return $includeFiles->includes( $relPath );
-		};
-	}
 }
